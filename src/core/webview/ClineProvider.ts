@@ -12,7 +12,7 @@ import { selectImages } from "../../integrations/misc/process-images"
 import { getTheme } from "../../integrations/theme/getTheme"
 import WorkspaceTracker from "../../integrations/workspace/WorkspaceTracker"
 import { McpHub } from "../../services/mcp/McpHub"
-import { ApiProvider, ModelInfo } from "../../shared/api"
+import { ApiConfiguration, ApiProvider, ModelInfo } from "../../shared/api"
 import { findLast } from "../../shared/array"
 import { ExtensionMessage } from "../../shared/ExtensionMessage"
 import { HistoryItem } from "../../shared/HistoryItem"
@@ -23,6 +23,7 @@ import { openMention } from "../mentions"
 import { getNonce } from "./getNonce"
 import { getUri } from "./getUri"
 import { AutoApprovalSettings, DEFAULT_AUTO_APPROVAL_SETTINGS } from "../../shared/AutoApprovalSettings"
+import { generateStructureYamlRecursively } from "../../utils/stc-gen"
 
 /*
 https://github.com/microsoft/vscode-webview-ui-toolkit-samples/blob/main/default/weather-webview/src/providers/WeatherViewProvider.ts
@@ -491,13 +492,34 @@ export class ClineProvider implements vscode.WebviewViewProvider {
 								console.error("Failed to abort task")
 							})
 							if (this.cline) {
-								// 'abandoned' will prevent this cline instance from affecting future cline instance gui. this may happen if its hanging on a streaming request
 								this.cline.abandoned = true
 							}
-							await this.initClineWithHistoryItem(historyItem) // clears task again, so we need to abortTask manually above
-							// await this.postStateToWebview() // new Cline instance will post state when it's ready. having this here sent an empty messages array to webview leading to virtuoso having to reload the entire list
+							await this.initClineWithHistoryItem(historyItem)
 						}
+						break
+					case "generateStcYaml":
+						const { apiConfiguration } = await this.getState()
+						try {
+							const workspaceFolders = vscode.workspace.workspaceFolders
+							if (!workspaceFolders) {
+								vscode.window.showErrorMessage("ワークスペースが開かれていません。")
+								return
+							}
 
+							const rootPath = workspaceFolders[0].uri.fsPath
+							await generateStructureYamlRecursively(rootPath, apiConfiguration)
+							vscode.window.showInformationMessage("stc.yamlの生成が完了しました。")
+						} catch (error) {
+							// APIキーは機密情報なので表示しない
+							const safeConfig = {
+								apiProvider: apiConfiguration.apiProvider,
+								apiModelId: apiConfiguration.apiModelId,
+								anthropicBaseUrl: apiConfiguration.anthropicBaseUrl,
+							}
+							vscode.window.showErrorMessage(
+								`stc.yamlの生成中にエラーが発生しました: ${error}\n設定内容: ${JSON.stringify(safeConfig, null, 2)}`,
+							)
+						}
 						break
 					case "openMcpSettings": {
 						const mcpSettingsFilePath = await this.mcpHub?.getMcpSettingsFilePath()

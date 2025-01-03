@@ -17,6 +17,7 @@ interface TaskHeaderProps {
 	cacheReads?: number
 	totalCost: number
 	onClose: () => void
+	children?: React.ReactNode
 }
 
 const TaskHeader: React.FC<TaskHeaderProps> = ({
@@ -28,6 +29,7 @@ const TaskHeader: React.FC<TaskHeaderProps> = ({
 	cacheReads,
 	totalCost,
 	onClose,
+	children,
 }) => {
 	const { apiConfiguration } = useExtensionState()
 	const [isTaskExpanded, setIsTaskExpanded] = useState(true)
@@ -171,9 +173,12 @@ const TaskHeader: React.FC<TaskHeaderProps> = ({
 							${totalCost?.toFixed(4)}
 						</div>
 					)}
-					<VSCodeButton appearance="icon" onClick={onClose} style={{ marginLeft: 6, flexShrink: 0 }}>
-						<span className="codicon codicon-close"></span>
-					</VSCodeButton>
+					<div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+						{children}
+						<VSCodeButton appearance="icon" onClick={onClose} style={{ flexShrink: 0 }}>
+							<span className="codicon codicon-close"></span>
+						</VSCodeButton>
+					</div>
 				</div>
 				{isTaskExpanded && (
 					<>

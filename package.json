@@ -94,6 +94,11 @@
 				"command": "cline.openInNewTab",
 				"title": "Open In New Tab",
 				"category": "Cline"
+			},
+			{
+				"command": "cline.generateStructureYaml",
+				"title": "Generate stc.yaml",
+				"category": "Cline"
 			}
 		],
 		"menus": {
@@ -173,6 +178,7 @@
 		"@types/clone-deep": "^4.0.4",
 		"@types/pdf-parse": "^1.1.4",
 		"@types/turndown": "^5.0.5",
+		"@types/yaml": "^1.9.7",
 		"@vscode/codicons": "^0.0.36",
 		"axios": "^1.7.4",
 		"cheerio": "^1.0.0",
@@ -198,6 +204,7 @@
 		"tree-sitter-wasms": "^0.1.11",
 		"turndown": "^7.2.0",
 		"web-tree-sitter": "^0.22.6",
+		"yaml": "^2.7.0",
 		"zod": "^3.23.8"
 	}
 }

@@ -6,6 +6,8 @@ import { ClineProvider } from "./core/webview/ClineProvider"
 import { createClineAPI } from "./exports"
 import "./utils/path" // necessary to have access to String.prototype.toPosix
 import { DIFF_VIEW_URI_SCHEME } from "./integrations/editor/DiffViewProvider"
+import { generateStructureYamlRecursively } from "./utils/stc-gen"
+import { ApiProvider } from "./shared/api"
 
 /*
 Built using https://github.com/microsoft/vscode-webview-ui-toolkit
@@ -46,6 +48,34 @@ export function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(
 		vscode.commands.registerCommand("cline.mcpButtonClicked", () => {
 			sidebarProvider.postMessageToWebview({ type: "action", action: "mcpButtonClicked" })
+		}),
+	)
+
+	// structure.yaml生成コマンドを追加
+	context.subscriptions.push(
+		vscode.commands.registerCommand("cline.generateStructureYaml", async () => {
+			try {
+				const workspaceFolders = vscode.workspace.workspaceFolders
+				if (!workspaceFolders) {
+					vscode.window.showErrorMessage("ワークスペースが開かれていません。")
+					return
+				}
+
+				// LLMの設定を取得
+				const config = vscode.workspace.getConfiguration("cline")
+				const apiConfig = {
+					apiProvider: config.get("apiProvider") as ApiProvider,
+					apiKey: config.get("apiKey") as string,
+					apiModelId: config.get("apiModelId") as string,
+					anthropicBaseUrl: config.get("anthropicBaseUrl") as string,
+				}
+
+				const rootPath = workspaceFolders[0].uri.fsPath
+				await generateStructureYamlRecursively(rootPath, apiConfig)
+				vscode.window.showInformationMessage("stc.yamlの生成が完了しました。")
+			} catch (error) {
+				vscode.window.showErrorMessage(`stc.yamlの生成中にエラーが発生しました: ${error}`)
+			}
 		}),
 	)
 

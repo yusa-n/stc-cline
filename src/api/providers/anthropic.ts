@@ -165,12 +165,11 @@ export class AnthropicHandler implements ApiHandler {
 		}
 	}
 
-	getModel(): { id: AnthropicModelId; info: ModelInfo } {
-		const modelId = this.options.apiModelId
-		if (modelId && modelId in anthropicModels) {
-			const id = modelId as AnthropicModelId
-			return { id, info: anthropicModels[id] }
+	getModel() {
+		const modelId = this.options.apiModelId || anthropicDefaultModelId
+		return {
+			id: modelId,
+			info: anthropicModels[modelId as AnthropicModelId],
 		}
-		return { id: anthropicDefaultModelId, info: anthropicModels[anthropicDefaultModelId] }
 	}
 }

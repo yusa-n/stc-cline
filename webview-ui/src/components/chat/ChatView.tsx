@@ -707,6 +707,10 @@ const ChatView = ({ isHidden, showAnnouncement, hideAnnouncement, showHistoryVie
 		[expandedRows, modifiedMessages, groupedMessages.length, toggleRowExpansion, handleRowHeightChange],
 	)
 
+	const handleGenerateStcYaml = () => {
+		vscode.postMessage({ type: "generateStcYaml" })
+	}
+
 	return (
 		<div
 			style={{
@@ -728,8 +732,14 @@ const ChatView = ({ isHidden, showAnnouncement, hideAnnouncement, showHistoryVie
 					cacheWrites={apiMetrics.totalCacheWrites}
 					cacheReads={apiMetrics.totalCacheReads}
 					totalCost={apiMetrics.totalCost}
-					onClose={handleTaskCloseButtonClick}
-				/>
+					onClose={handleTaskCloseButtonClick}>
+					<VSCodeButton appearance="icon" onClick={showHistoryView}>
+						<i className="codicon codicon-history" />
+					</VSCodeButton>
+					<VSCodeButton appearance="icon" onClick={handleGenerateStcYaml}>
+						<i className="codicon codicon-file-symlink-file" />
+					</VSCodeButton>
+				</TaskHeader>
 			) : (
 				<div
 					style={{
@@ -755,6 +765,10 @@ const ChatView = ({ isHidden, showAnnouncement, hideAnnouncement, showHistoryVie
 							(after you grant permission), I can assist you in ways that go beyond code completion or
 							tech support. I can even use MCP to create new tools and extend my own capabilities.
 						</p>
+						<div style={{ display: "flex", gap: "8px", marginBottom: "16px" }}>
+							<VSCodeButton onClick={showHistoryView}>Show History</VSCodeButton>
+							<VSCodeButton onClick={handleGenerateStcYaml}>Generate stc.yaml</VSCodeButton>
+						</div>
 					</div>
 					{taskHistory.length > 0 && <HistoryPreview showHistoryView={showHistoryView} />}
 				</div>
