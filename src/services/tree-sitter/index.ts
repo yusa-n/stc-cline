@@ -12,8 +12,8 @@ export async function parseSourceCodeForDefinitionsTopLevel(dirPath: string): Pr
 		return "This directory does not exist or you do not have permission to access it."
 	}
 
-	// Get all files at top level (not gitignored)
-	const [allFiles, _] = await listFiles(dirPath, false, 200)
+	// Get all files recursively (not gitignored)
+	const [allFiles, _] = await listFiles(dirPath, true, 200)
 
 	let result = ""
 
@@ -23,29 +23,22 @@ export async function parseSourceCodeForDefinitionsTopLevel(dirPath: string): Pr
 	const languageParsers = await loadRequiredLanguageParsers(filesToParse)
 
 	// Parse specific files we have language parsers for
-	// const filesWithoutDefinitions: string[] = []
 	for (const file of filesToParse) {
 		const definitions = await parseFile(file, languageParsers)
 		if (definitions) {
 			result += `${path.relative(dirPath, file).toPosix()}\n${definitions}\n`
 		}
-		// else {
-		// 	filesWithoutDefinitions.push(file)
-		// }
 	}
 
 	// List remaining files' paths
-	// let didFindUnparsedFiles = false
-	// filesWithoutDefinitions
-	// 	.concat(remainingFiles)
-	// 	.sort()
-	// 	.forEach((file) => {
-	// 		if (!didFindUnparsedFiles) {
-	// 			result += "# Unparsed Files\n\n"
-	// 			didFindUnparsedFiles = true
-	// 		}
-	// 		result += `${path.relative(dirPath, file)}\n`
-	// 	})
+	let didFindUnparsedFiles = false
+	remainingFiles.sort().forEach((file) => {
+		if (!didFindUnparsedFiles) {
+			result += "\n# Unparsed Files\n\n"
+			didFindUnparsedFiles = true
+		}
+		result += `${path.relative(dirPath, file).toPosix()}\n`
+	})
 
 	return result ? result : "No source code definitions found."
 }
