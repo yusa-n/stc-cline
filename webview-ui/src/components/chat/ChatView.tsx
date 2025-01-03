@@ -1,4 +1,4 @@
-import { VSCodeButton, VSCodeLink } from "@vscode/webview-ui-toolkit/react"
+import { VSCodeButton, VSCodeLink, VSCodeProgressRing } from "@vscode/webview-ui-toolkit/react"
 import debounce from "debounce"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useDeepCompareEffect, useEvent, useMount } from "react-use"
@@ -61,6 +61,7 @@ const ChatView = ({ isHidden, showAnnouncement, hideAnnouncement, showHistoryVie
 	const disableAutoScrollRef = useRef(false)
 	const [showScrollToBottom, setShowScrollToBottom] = useState(false)
 	const [isAtBottom, setIsAtBottom] = useState(false)
+	const [isGeneratingStcYaml, setIsGeneratingStcYaml] = useState(false)
 
 	// UI layout depends on the last 2 messages
 	// (since it relies on the content of these messages, we are deep comparing. i.e. the button state after hitting button sets enableButtons to false, and this effect otherwise would have to true again even if messages didn't change
@@ -708,8 +709,20 @@ const ChatView = ({ isHidden, showAnnouncement, hideAnnouncement, showHistoryVie
 	)
 
 	const handleGenerateStcYaml = () => {
+		setIsGeneratingStcYaml(true)
 		vscode.postMessage({ type: "generateStcYaml" })
 	}
+
+	useEffect(() => {
+		const handleMessage = (e: MessageEvent) => {
+			const message: ExtensionMessage = e.data
+			if (message.type === "generateStcYamlResult") {
+				setIsGeneratingStcYaml(false)
+			}
+		}
+		window.addEventListener("message", handleMessage)
+		return () => window.removeEventListener("message", handleMessage)
+	}, [])
 
 	return (
 		<div
@@ -736,8 +749,12 @@ const ChatView = ({ isHidden, showAnnouncement, hideAnnouncement, showHistoryVie
 					<VSCodeButton appearance="icon" onClick={showHistoryView}>
 						<i className="codicon codicon-history" />
 					</VSCodeButton>
-					<VSCodeButton appearance="icon" onClick={handleGenerateStcYaml}>
-						<i className="codicon codicon-file-symlink-file" />
+					<VSCodeButton appearance="icon" onClick={handleGenerateStcYaml} disabled={isGeneratingStcYaml}>
+						{isGeneratingStcYaml ? (
+							<VSCodeProgressRing style={{ width: "16px", height: "16px" }} />
+						) : (
+							<i className="codicon codicon-file-symlink-file" />
+						)}
 					</VSCodeButton>
 				</TaskHeader>
 			) : (
@@ -767,7 +784,18 @@ const ChatView = ({ isHidden, showAnnouncement, hideAnnouncement, showHistoryVie
 						</p>
 						<div style={{ display: "flex", gap: "8px", marginBottom: "16px" }}>
 							<VSCodeButton onClick={showHistoryView}>Show History</VSCodeButton>
-							<VSCodeButton onClick={handleGenerateStcYaml}>Generate stc.yaml</VSCodeButton>
+							<VSCodeButton onClick={handleGenerateStcYaml} disabled={isGeneratingStcYaml}>
+								{isGeneratingStcYaml ? (
+									<>
+										<VSCodeProgressRing
+											style={{ width: "16px", height: "16px", marginRight: "8px" }}
+										/>
+										Generating stc.yaml...
+									</>
+								) : (
+									"Generate stc.yaml"
+								)}
+							</VSCodeButton>
 						</div>
 					</div>
 					{taskHistory.length > 0 && <HistoryPreview showHistoryView={showHistoryView} />}

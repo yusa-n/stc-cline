@@ -19,6 +19,7 @@ export interface ExtensionMessage {
 		| "partialMessage"
 		| "openRouterModels"
 		| "mcpServers"
+		| "generateStcYamlResult"
 	text?: string
 	action?:
 		| "chatButtonClicked"
@@ -35,6 +36,9 @@ export interface ExtensionMessage {
 	partialMessage?: ClineMessage
 	openRouterModels?: Record<string, ModelInfo>
 	mcpServers?: McpServer[]
+	tokensIn?: number
+	tokensOut?: number
+	cost?: number
 }
 
 export interface ExtensionState {

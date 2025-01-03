@@ -50,7 +50,19 @@ async function analyzeFile(filePath: string): Promise<string> {
 	}
 }
 
-export async function generateStructureYamlRecursively(rootPath: string, apiConfiguration: ApiConfiguration) {
+interface GenerateStructureYamlResult {
+	success: boolean
+	message: string
+	path: string
+	tokensIn?: number
+	tokensOut?: number
+	cost?: number
+}
+
+export async function generateStructureYamlRecursively(
+	rootPath: string,
+	apiConfiguration: ApiConfiguration,
+): Promise<GenerateStructureYamlResult> {
 	// APIハンドラーの設定
 	const api = buildApiHandler(apiConfiguration)
 
@@ -138,11 +150,19 @@ no talk; just output yaml.`,
 		},
 	]
 
+	let totalTokensIn = 0
+	let totalTokensOut = 0
+	let totalCost = 0
+
 	// 生成AIを使用してYAMLを生成
 	let generatedYaml = ""
 	for await (const chunk of api.createMessage(systemPrompt, messages)) {
 		if (chunk.type === "text") {
 			generatedYaml += chunk.text
+		} else if (chunk.type === "usage") {
+			totalTokensIn += chunk.inputTokens
+			totalTokensOut += chunk.outputTokens
+			totalCost += chunk.totalCost ?? 0
 		}
 	}
 
@@ -199,6 +219,10 @@ no talk; just output yaml.`,
 		for await (const chunk of api.createMessage(systemPrompt, dirMessages)) {
 			if (chunk.type === "text") {
 				dirYaml += chunk.text
+			} else if (chunk.type === "usage") {
+				totalTokensIn += chunk.inputTokens
+				totalTokensOut += chunk.outputTokens
+				totalCost += chunk.totalCost ?? 0
 			}
 		}
 
@@ -211,5 +235,8 @@ no talk; just output yaml.`,
 		success: true,
 		message: "stc.yamlの生成が完了しました",
 		path: stcYamlPath,
+		tokensIn: totalTokensIn,
+		tokensOut: totalTokensOut,
+		cost: totalCost,
 	}
 }

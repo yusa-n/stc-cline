@@ -497,30 +497,33 @@ export class ClineProvider implements vscode.WebviewViewProvider {
 							await this.initClineWithHistoryItem(historyItem)
 						}
 						break
-					case "generateStcYaml":
+					case "generateStcYaml": {
 						const { apiConfiguration } = await this.getState()
-						try {
-							const workspaceFolders = vscode.workspace.workspaceFolders
-							if (!workspaceFolders) {
-								vscode.window.showErrorMessage("ワークスペースが開かれていません。")
-								return
-							}
+						const workspaceFolders = vscode.workspace.workspaceFolders
+						if (!workspaceFolders) {
+							vscode.window.showErrorMessage("ワークスペースが開かれていません。")
+							return
+						}
 
-							const rootPath = workspaceFolders[0].uri.fsPath
-							await generateStructureYamlRecursively(rootPath, apiConfiguration)
-							vscode.window.showInformationMessage("stc.yamlの生成が完了しました。")
-						} catch (error) {
-							// APIキーは機密情報なので表示しない
-							const safeConfig = {
-								apiProvider: apiConfiguration.apiProvider,
-								apiModelId: apiConfiguration.apiModelId,
-								anthropicBaseUrl: apiConfiguration.anthropicBaseUrl,
-							}
-							vscode.window.showErrorMessage(
-								`stc.yamlの生成中にエラーが発生しました: ${error}\n設定内容: ${JSON.stringify(safeConfig, null, 2)}`,
+						const rootPath = workspaceFolders[0].uri.fsPath
+						const result = await generateStructureYamlRecursively(rootPath, apiConfiguration)
+						if (result.success) {
+							this.view?.webview.postMessage({
+								type: "generateStcYamlResult",
+								tokensIn: result.tokensIn,
+								tokensOut: result.tokensOut,
+								cost: result.cost,
+							})
+							vscode.window.showInformationMessage(
+								`stc.yamlを生成しました: ${result.path}\n` +
+									`トークン数: 入力=${result.tokensIn}, 出力=${result.tokensOut}\n` +
+									`コスト: $${result.cost?.toFixed(4) ?? 0}`,
 							)
+						} else {
+							vscode.window.showErrorMessage(`stc.yamlの生成に失敗しました: ${result.message}`)
 						}
 						break
+					}
 					case "openMcpSettings": {
 						const mcpSettingsFilePath = await this.mcpHub?.getMcpSettingsFilePath()
 						if (mcpSettingsFilePath) {
